@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dota 2 - Легендарна MOBA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #0A0E13;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Анімація крапель лави */
+        .lava-drops {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1; /* Changed from -1 to 1 */
+        }
+
+        .lava-drop {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #FF4747;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 6px rgba(255, 71, 71, 0.8));
+            animation: dropFall linear infinite;
+        }
+
+        @keyframes dropFall {
+            0% {
+                transform: translateY(-20px) scale(1);
+                opacity: 1;
+            }
+            70% {
+                transform: translateY(var(--fall-height)) scale(1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(var(--fall-height)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .hidden {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 1s ease;
+        }
+
+        .show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: background-color 0.5s ease;
+        }
+
+        @media (min-width: 768px) {
+            .header {
+                padding: 20px 50px;
+            }
+        }
+
+        .header.scrolled {
+            background-color: rgba(10, 14, 19, 0.9);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FF4747;
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(255, 71, 71, 0.5);
+        }
+
+        @media (min-width: 768px) {
+            .logo {
+                font-size: 32px;
+            }
+        }
+
+        .nav-links {
+            display: none;
+            gap: 30px;
+        }
+
+        .mobile-menu-btn {
+            display: block;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            position: relative;
+            z-index: 1002;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: #FF4747;
+            margin: 6px auto;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px rgba(255, 71, 71, 0.7);
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: translateY(9px) rotate(45deg);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: translateY(-9px) rotate(-45deg);
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 70%;
+            height: 100vh;
+            background-color: rgba(10, 14, 19, 0.95);
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: right 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-left: 2px solid rgba(255, 71, 71, 0.3);
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        .mobile-menu a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 24px;
+            margin: 15px 0;
+            position: relative;
+            padding: 10px 20px;
+            transition: all 0.4s ease;
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        .mobile-menu.active a {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: calc(0.1s * var(--i));
+        }
+
+        .mobile-menu a:hover {
+            color: #FF4747;
+            transform: scale(1.1);
+        }
+
+        .mobile-menu a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 71, 71, 0.1);
+            border-radius: 10px;
+            z-index: -1;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.4s ease;
+        }
+
+        .mobile-menu a:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .mobile-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background-color: #FF4747;
+            transition: all 0.4s ease;
+            transform: translateX(-50%);
+        }
+
+        .mobile-menu a:hover::after {
+            width: 80%;
+            box-shadow: 0 0 10px rgba(255, 71, 71, 0.7);
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+            backdrop-filter: blur(3px);
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (min-width: 768px) {
+            .nav-links {
+                display: flex;
+            }
+            
+            .mobile-menu-btn {
+                display: none;
+            }
+            
+            .mobile-menu {
+                display: none;
+            }
+            
+            .menu-overlay {
+                display: none;
+            }
+        }
+
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+            position: relative;
+            padding: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #FF4747;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #FF4747;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .hero {
+            height: 100vh;
+            background: linear-gradient(rgba(10, 14, 19, 0.7), rgba(10, 14, 19, 0.9)), url('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg') no-repeat center center/cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent, rgba(10, 14, 19, 0.8));
+            z-index: 1;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(to bottom, transparent, #0A0E13);
+            z-index: 2;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: pulse 3s infinite;
+        }
+
+        @media (min-width: 768px) {
+            .hero h1 {
+                font-size: 72px;
+            }
+        }
+
+        @keyframes pulse {
+            0% { text-shadow: 0 0 10px rgba(255, 71, 71, 0.3); }
+            50% { text-shadow: 0 0 20px rgba(255, 71, 71, 0.7); }
+            100% { text-shadow: 0 0 10px rgba(255, 71, 71, 0.3); }
+        }
+
+        .hero p {
+            font-size: 18px;
+            max-width: 800px;
+            margin-bottom: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .hero p {
+                font-size: 24px;
+            }
+        }
+
+        .cta-button {
+            background-color: #FF4747;
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(255, 71, 71, 0.4);
+        }
+
+        @media (min-width: 768px) {
+            .cta-button {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
+        }
+
+        .cta-button:hover {
+            background-color: #ff2828;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 71, 71, 0.6);
+        }
+
+        .floating-heroes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .hero-img {
+            position: absolute;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+            border: 3px solid #FF4747;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 0 20px rgba(255, 71, 71, 0.5);
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+        }
+
+        @media (min-width: 768px) {
+            .hero-img {
+                width: auto;
+                height: auto;
+            }
+        }
+
+        .hero-img-1 {
+            top: 10%;
+            left: 5%;
+            transform: translateY(0);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .hero-img-2 {
+            top: 15%;
+            right: 5%;
+            transform: translateY(0);
+            animation: float 7s ease-in-out infinite;
+        }
+
+        .hero-img-3 {
+            bottom: 15%;
+            left: 10%;
+            transform: translateY(0);
+            animation: float 5s ease-in-out infinite;
+        }
+
+        .hero-img-4 {
+            bottom: 10%;
+            right: 10%;
+            transform: translateY(0);
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        .about {
+            padding: 60px 20px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(rgba(10, 14, 19, 0.95), rgba(10, 14, 19, 0.95));
+        }
+
+        @media (min-width: 768px) {
+            .about {
+                padding: 100px 50px;
+            }
+        }
+
+        .about-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255, 71, 71, 0.1), transparent 70%);
+            z-index: -1;
+            animation: pulse-bg 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-bg {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .section-title {
+            font-size: 36px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #FF4747;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @media (min-width: 768px) {
+            .section-title {
+                font-size: 48px;
+            }
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(255, 71, 71, 0.3); }
+            50% { text-shadow: 0 0 20px rgba(255, 71, 71, 0.7); }
+            100% { text-shadow: 0 0 10px rgba(255, 71, 71, 0.3); }
+        }
+
+        .about-content {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .about-content {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+
+        .about-text {
+            flex: 1;
+            min-width: 300px;
+            transform: translateX(-50px);
+            opacity: 0;
+            transition: all 1s ease;
+        }
+
+        @media (min-width: 768px) {
+            .about-text {
+                transform: translateX(-100px);
+            }
+        }
+
+        .about-text.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .about-text p {
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .about-text p {
+                font-size: 18px;
+            }
+        }
+
+        .about-image {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transform: translateX(50px);
+            opacity: 0;
+            transition: all 1s ease;
+        }
+
+        @media (min-width: 768px) {
+            .about-image {
+                transform: translateX(100px);
+            }
+        }
+
+        .about-image.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .about-image img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: rotateY(0deg);
+            transition: transform 0.5s ease;
+        }
+
+        .about-image:hover img {
+            transform: rotateY(10deg);
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-20px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+        }
+
+        .scroll-down {
+            width: 30px;
+            height: 50px;
+            border: 2px solid #fff;
+            border-radius: 25px;
+            display: flex;
+            justify-content: center;
+            padding-top: 10px;
+        }
+
+        .scroll-down::before {
+            content: '';
+            width: 4px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 2px;
+            animation: scrollDownAnim 2s infinite;
+        }
+
+        @keyframes scrollDownAnim {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(15px);
+                opacity: 0;
+            }
+        }
+
+        .parallax-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: url('https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg') no-repeat center center/cover;
+            z-index: -2;
+            opacity: 0.05;
+        }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .info-cards {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 30px;
+            }
+        }
+
+        .info-card {
+            background: rgba(255, 71, 71, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transform: translateY(50px);
+            opacity: 0;
+            transition: all 0.8s ease;
+            cursor: pointer;
+        }
+
+        .info-card.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .info-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 71, 71, 0.2);
+        }
+
+        .info-card i {
+            font-size: 48px;
+            color: #FF4747;
+            margin-bottom: 20px;
+        }
+
+        .info-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #FF4747;
+        }
+
+        .info-card p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Нові стилі для секції героїв */
+        .heroes-section {
+            padding: 60px 20px;
+            background: linear-gradient(rgba(10, 14, 19, 0.95), rgba(10, 14, 19, 0.95));
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .heroes-section {
+                padding: 100px 50px;
+            }
+        }
+
+        .hero-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .hero-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 30px;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .hero-cards {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        .hero-card {
+            background: rgba(255, 71, 71, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.5s ease;
+            border: 2px solid transparent;
+        }
+
+        .hero-card.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .hero-card:hover {
+            border-color: #FF4747;
+            transform: translateY(-10px);
+            box-shadow: 0 0 30px rgba(255, 71, 71, 0.3);
+        }
+
+        .hero-portrait {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            border: 3px solid #FF4747;
+            box-shadow: 0 0 20px rgba(255, 71, 71, 0.5);
+            transition: all 0.3s ease;
+            object-fit: cover;
+            object-position: center top;
+        }
+
+        @media (min-width: 768px) {
+            .hero-portrait {
+                width: 200px;
+                height: 200px;
+            }
+        }
+
+        .hero-card:hover .hero-portrait {
+            transform: rotate(5deg) scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 71, 71, 0.8);
+        }
+
+        .hero-name {
+            font-size: 24px;
+            color: #FF4747;
+            margin-bottom: 10px;
+        }
+
+        .hero-role {
+            color: #fff;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .hero-description {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        /* Нові стилі для секції геймплею */
+        .gameplay-section {
+            padding: 60px 20px;
+            background: linear-gradient(rgba(10, 14, 19, 0.95), rgba(10, 14, 19, 0.95));
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .gameplay-section {
+                padding: 100px 50px;
+            }
+        }
+
+        .gameplay-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .gameplay-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 40px;
+            }
+        }
+
+        .gameplay-card {
+            background: rgba(255, 71, 71, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            transform: translateY(50px);
+            opacity: 0;
+            transition: all 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gameplay-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 71, 71, 0.1), transparent 70%);
+            transform: rotate(45deg);
+            transition: all 0.8s ease;
+            z-index: -1;
+        }
+
+        .gameplay-card:hover::before {
+            transform: rotate(180deg);
+        }
+
+        .gameplay-card.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .gameplay-icon {
+            font-size: 48px;
+            color: #FF4747;
+            margin-bottom: 20px;
+            transition: transform 0.5s ease;
+        }
+
+        .gameplay-card:hover .gameplay-icon {
+            transform: scale(1.2) rotate(360deg);
+        }
+
+        .gameplay-title {
+            font-size: 24px;
+            color: #FF4747;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .gameplay-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: #FF4747;
+            transition: width 0.3s ease;
+        }
+
+        .gameplay-card:hover .gameplay-title::after {
+            width: 100%;
+        }
+
+        .gameplay-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #ccc;
+        }
+
+        .gameplay-video {
+            width: 100%;
+            max-width: 800px;
+            margin: 50px auto;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(255, 71, 71, 0.3);
+            transform: translateY(50px);
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+
+        .gameplay-video.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .gameplay-video iframe {
+            border-radius: 20px;
+            height: 250px;
+        }
+
+        @media (min-width: 768px) {
+            .gameplay-video iframe {
+                height: 450px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="parallax-bg"></div>
+    <div class="lava-drops"></div>
+
+    <header class="header">
+        <a href="#" class="logo">DOTA 2</a>
+        <nav class="nav-links">
+            <a href="#about">Про гру</a>
+            <a href="#heroes">Герої</a>
+            <a href="#gameplay">Геймплей</a>
+            <a href="https://store.steampowered.com/app/570/Dota_2/">Завантажити</a>
+        </nav>
+        <button class="mobile-menu-btn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </header>
+
+    <div class="menu-overlay"></div>
+    <div class="mobile-menu">
+        <a href="#about" style="--i:1">Про гру</a>
+        <a href="#heroes" style="--i:2">Герої</a>
+        <a href="#gameplay" style="--i:3">Геймплей</a>
+        <a href="https://store.steampowered.com/app/570/Dota_2/" style="--i:4">Завантажити</a>
+    </div>
+
+    <section class="hero" id="home">
+        <div class="floating-heroes">
+            <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/crystal_maiden_full.png" alt="Crystal Maiden" class="hero-img hero-img-1">
+            <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/invoker_full.png" alt="Invoker" class="hero-img hero-img-2">
+            <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/pudge_full.png" alt="Pudge" class="hero-img hero-img-3">
+            <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/juggernaut_full.png" alt="Juggernaut" class="hero-img hero-img-4">
+        </div>
+        <div class="hero-content">
+            <h1>DOTA 2</h1>
+            <p>Зануріться в епічну битву на легендарній арені. Оберіть свого героя та змініть хід битви.</p>
+            <a href="https://store.steampowered.com/app/570/Dota_2/" class="cta-button">Грати безкоштовно</a>
+        </div>
+        <div class="scroll-indicator">
+            <div class="scroll-down"></div>
+        </div>
+    </section>
+
+    <section id="about" class="about">
+        <div class="about-bg"></div>
+        <h2 class="section-title">Про Dota 2</h2>
+        <div class="about-content">
+            <div class="about-text hidden">
+                <p>Dota 2 - це багатокористувацька онлайн-гра в жанрі MOBA, розроблена Valve Corporation. У кожному матчі дві команди з п'яти гравців змагаються за знищення ворожої древньої, захищаючи при цьому свою.</p>
+                <p>Гра відрізняється неймовірною глибиною стратегії, величезним вибором героїв і геймплеєм, що постійно розвивається. Кожен матч унікальний і пропонує нові випробування.</p>
+            </div>
+            <div class="about-image hidden">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota2_social.jpg" alt="Dota 2 Gameplay">
+            </div>
+        </div>
+        
+        <div class="info-cards">
+            <div class="info-card hidden">
+                <i class="fas fa-users"></i>
+                <h3>123+ Героїв</h3>
+                <p>Величезний вибір унікальних персонажів з власними здібностями та стилем гри</p>
+            </div>
+            <div class="info-card hidden">
+                <i class="fas fa-trophy"></i>
+                <h3>Кіберспорт</h3>
+                <p>Один з найбільших кіберспортивних турнірів з призовим фондом понад $40 мільйонів</p>
+            </div>
+            <div class="info-card hidden">
+                <i class="fas fa-gamepad"></i>
+                <h3>Безкоштовна гра</h3>
+                <p>Усі герої доступні з самого початку, без необхідності купівлі або розблокування</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="heroes" class="heroes-section">
+        <h2 class="section-title">Легендарні Герої</h2>
+        <div class="hero-cards">
+            <div class="hero-card hidden">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/invoker_full.png" alt="Invoker" class="hero-portrait">
+                <h3 class="hero-name">Invoker</h3>
+                <p class="hero-role">Intelligence - Складність: <span style="color: #FF4747;">★★★</span></p>
+                <p class="hero-description">Могутній маг, здатний комбінувати різні заклинання. Майстерність Інвокера вимагає виняткової пам'яті та швидких рефлексів.</p>
+            </div>
+            <div class="hero-card hidden">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/pudge_full.png" alt="Pudge" class="hero-portrait">
+                <h3 class="hero-name">Pudge</h3>
+                <p class="hero-role">Strength - Складність: <span style="color: #FF4747;">★★</span></p>
+                <p class="hero-description">М'ясник, що наводить жах на ворогів своїм смертоносним гаком. Один з найпопулярніших героїв в історії Dota 2.</p>
+            </div>
+            <div class="hero-card hidden">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/crystal_maiden_full.png" alt="Crystal Maiden" class="hero-portrait">
+                <h3 class="hero-name">Crystal Maiden</h3>
+                <p class="hero-role">Intelligence - Складність: <span style="color: #FF4747;">★</span></p>
+                <p class="hero-description">Повелителька льоду, здатна заморожувати ворогів і підтримувати союзників. Ідеальний герой для початківців.</p>
+            </div>
+            <div class="hero-card hidden">
+                <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/heroes/juggernaut_full.png" alt="Juggernaut" class="hero-portrait">
+                <h3 class="hero-name">Juggernaut</h3>
+                <p class="hero-role">Agility - Складність: <span style="color: #FF4747;">★★</span></p>
+                <p class="hero-description">Майстер клинка, що поєднує в собі неймовірну швидкість і смертоносні здібності. Універсальний керрі-герой.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="gameplay" class="gameplay-section">
+        <h2 class="section-title">Геймплей</h2>
+        <div class="gameplay-grid">
+            <div class="gameplay-card hidden">
+                <i class="fas fa-chess gameplay-icon"></i>
+                <h3 class="gameplay-title">Стратегічна глибина</h3>
+                <p class="gameplay-description">Кожен матч - це унікальне поєднання стратегії та тактики. Вибирайте з сотень предметів, розвивайте свого героя та координуйте дії з командою.</p>
+            </div>
+            <div class="gameplay-card hidden">
+                <i class="fas fa-map gameplay-icon"></i>
+                <h3 class="gameplay-title">Карта та цілі</h3>
+                <p class="gameplay-description">Бийтеся на легендарній карті з трьома лініями, лісом і безліччю стратегічних точок. Знищуйте вежі, контролюйте Рошана та захищайте свою древню.</p>
+            </div>
+            <div class="gameplay-card hidden">
+                <i class="fas fa-level-up-alt gameplay-icon"></i>
+                <h3 class="gameplay-title">Розвиток героя</h3>
+                <p class="gameplay-description">Отримуйте досвід, прокачуйте здібності та збирайте потужні предмети. Кожне рішення впливає на результат матчу.</p>
+            </div>
+        </div>
+        <div class="gameplay-video hidden">
+            <iframe width="100%" height="450" src="https://www.youtube.com/embed/9Szj-CloJiI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </section>
+
+    <script>
+        // Add scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('show');
+                }
+            });
+        });
+
+        const hiddenElements = document.querySelectorAll('.hidden');
+        hiddenElements.forEach((el) => observer.observe(el));
+
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Lava drops animation
+        function createLavaDrop() {
+            const drop = document.createElement('div');
+            drop.className = 'lava-drop';
+            
+            // Random position
+            const startPos = Math.random() * window.innerWidth;
+            drop.style.left = startPos + 'px';
+            
+            // Random fall height
+            const fallHeight = Math.random() * (window.innerHeight - 100) + 100;
+            drop.style.setProperty('--fall-height', fallHeight + 'px');
+            
+            // Random animation duration
+            const duration = Math.random() * 2 + 2; // 2-4 seconds
+            drop.style.animationDuration = duration + 's';
+            
+            document.querySelector('.lava-drops').appendChild(drop);
+            
+            // Remove drop after animation
+            setTimeout(() => {
+                drop.remove();
+            }, duration * 1000);
+        }
+
+        // Create drops periodically
+        setInterval(createLavaDrop, 200);
+    </script>
+</body>
+</html>
